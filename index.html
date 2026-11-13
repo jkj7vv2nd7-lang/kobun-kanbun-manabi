@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>古文・漢文 学びの友 ― 古典学習支援アプリ</title>
+<meta name="description" content="中学生・高校生のための古文・漢文学習支援アプリ。名文ライブラリ（現代仮名遣い・現代語訳・重要語解説つき）、音読支援、古語・句法カード、4択クイズ、自由入力の音読とメモ。">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta property="og:title" content="古文・漢文 学びの友">
+<meta property="og:description" content="名文を、訳と解説と音読で読む。古文・漢文の学習支援アプリ。">
+<meta property="og:image" content="og.png">
+<meta property="og:type" content="website">
+<style>
+:root{
+  --bg:#f6f1e7; --card:#fffdf7; --ink:#2b3245; --ink2:#5a6378;
+  --ai:#33527a; --ai-soft:#e3eaf3; --shu:#b54434; --shu-soft:#f9e8e4;
+  --gold:#c19a3f; --line:#ddd3bd;
+  --joshi:#ffe9a8; --jodoushi:#ffc9d6;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html{font-size:17px;}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);}
+header{background:linear-gradient(135deg,#2e4468,#33527a 55%,#46648c); color:#fff; padding:20px 16px 16px; text-align:center;}
+header h1{margin:0; font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.65rem; letter-spacing:.06em;}
+header p{margin:6px 0 0; font-size:.86rem; opacity:.92;}
+nav.tabs{display:flex; gap:6px; padding:10px 10px 0; position:sticky; top:0; background:var(--bg); z-index:20; flex-wrap:wrap;}
+nav.tabs button{flex:1 1 30%; min-height:48px; border:2px solid var(--ai); background:#fff; color:var(--ai);
+  border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer; padding:8px 4px;}
+nav.tabs button.on{background:var(--ai); color:#fff;}
+main{padding:12px; max-width:860px; margin:0 auto;}
+section.panel{display:none;}
+section.panel.on{display:block;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin:0 0 14px;
+  box-shadow:0 1px 3px rgba(60,50,20,.06);}
+h2.sec{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; color:var(--ai); font-size:1.25rem; margin:4px 0 10px;
+  border-left:6px solid var(--shu); padding-left:10px;}
+h3.sub{color:var(--ai); font-size:1.05rem; margin:14px 0 6px;}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+.chips button{border:2px solid var(--gold); background:#fff; color:var(--ink); border-radius:999px;
+  padding:9px 14px; font-size:.95rem; font-weight:700; cursor:pointer; min-height:44px;}
+.chips button.on{background:var(--gold); color:#fff;}
+.toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0;}
+button.act{min-height:46px; border-radius:10px; border:2px solid var(--ai); background:var(--ai); color:#fff;
+  font-size:1rem; font-weight:700; padding:8px 16px; cursor:pointer;}
+button.act.stop{background:var(--shu); border-color:var(--shu);}
+button.act.ghost{background:#fff; color:var(--ai);}
+button.act:disabled{opacity:.45;}
+label.tgl{display:inline-flex; align-items:center; gap:6px; background:#fff; border:1.5px solid var(--line);
+  border-radius:999px; padding:8px 12px; font-size:.92rem; font-weight:700; cursor:pointer; min-height:44px;}
+label.tgl input{width:20px; height:20px; accent-color:var(--ai);}
+.ratebox{display:inline-flex; align-items:center; gap:8px; background:#fff; border:1.5px solid var(--line);
+  border-radius:999px; padding:6px 12px; font-size:.92rem; font-weight:700; min-height:44px;}
+.ratebox input[type=range]{width:110px; accent-color:var(--ai);}
+.reading{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.22rem; line-height:2.15; letter-spacing:.02em;}
+.reading rt{font-size:.52em; color:var(--ink2);}
+.nofuri rt{display:none;}
+span.hl-joshi{background:var(--joshi); border-radius:4px; padding:0 1px;}
+span.hl-jodoushi{background:var(--jodoushi); border-radius:4px; padding:0 1px;}
+.legend{font-size:.85rem; color:var(--ink2); margin-top:8px;}
+.legend .sw{display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:-2px; margin:0 3px 0 8px;}
+.yaku{font-size:1.02rem; line-height:1.9;}
+.words{display:grid; gap:8px;}
+.word{background:#fff; border:1px solid var(--line); border-left:5px solid var(--gold); border-radius:8px; padding:8px 12px;}
+.word b{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.08rem; color:var(--ai);}
+.word .m{margin-left:8px;}
+.word .e{display:block; color:var(--ink2); font-size:.9rem; margin-top:2px;}
+.kanbun-line{display:flex; flex-wrap:wrap; gap:2px 6px; align-items:flex-end; padding:8px 2px;}
+.kt{display:inline-flex; flex-direction:column; align-items:center; min-width:2.1rem;}
+.kt .kc{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.9rem; line-height:1.1; position:relative;}
+.kt .ko{font-size:.78rem; color:var(--shu); font-weight:700; line-height:1.15; min-height:1em;}
+.kt .km{font-size:.8rem; color:var(--ai); font-weight:700; line-height:1; min-height:1em;}
+.nowhaku .kt .ko, .nowhaku .kt .km{visibility:hidden;}
+.punct{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.6rem; align-self:center;}
+.guidebox{display:flex; flex-wrap:wrap; gap:14px;}
+.guide{flex:1 1 230px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+.guide h4{margin:0 0 6px; color:var(--shu); font-size:1.02rem;}
+.guide .seq{display:flex; gap:6px; align-items:flex-start; margin:8px 0;}
+.kbox{border:2px solid var(--ai); border-radius:8px; padding:4px 8px; text-align:center; background:var(--ai-soft); min-width:2.6rem;}
+.kbox .k{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.45rem; display:block; line-height:1.15;}
+.kbox .o{font-size:.68rem; color:var(--shu); font-weight:700; display:block; min-height:.9em;}
+.kbox .ord{display:inline-block; background:var(--shu); color:#fff; border-radius:999px; font-size:.72rem;
+  padding:1px 7px; margin-top:3px; font-weight:700;}
+.guide p{font-size:.9rem; line-height:1.7; margin:6px 0 0;}
+table.kana{border-collapse:collapse; width:100%; font-size:.95rem;}
+.cards-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px;}
+.kcard{background:#fff; border:2px solid var(--ai); border-radius:12px; padding:12px; cursor:pointer; min-height:86px;}
+.kcard .w{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.3rem; color:var(--ai); font-weight:700;}
+.kcard .hint{font-size:.8rem; color:var(--ink2); margin-top:4px;}
+.kcard.open{border-color:var(--shu); background:#fffaf5; grid-column:1/-1;}
+.kcard .detail{display:none; margin-top:8px; font-size:.98rem; line-height:1.8;}
+.kcard.open .detail{display:block;}
+.kcard .ex{background:var(--ai-soft); border-radius:8px; padding:6px 10px; margin-top:6px; font-size:.92rem;}
+.kcard .hook{background:#fdf3d8; border:1.5px dashed var(--gold); border-radius:8px; padding:6px 10px; margin-top:6px; font-size:.94rem;}
+.quiz-q{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.35rem; line-height:1.8; margin:8px 0 14px;}
+.quiz-opts{display:grid; gap:10px;}
+.quiz-opts button{min-height:52px; text-align:left; background:#fff; border:2px solid var(--ai); color:var(--ink);
+  border-radius:12px; font-size:1.05rem; padding:10px 14px; cursor:pointer; font-weight:600;}
+.quiz-opts button.right{background:#e2f2df; border-color:#3d8b37;}
+.quiz-opts button.wrong{background:var(--shu-soft); border-color:var(--shu);}
+.quiz-opts button:disabled{opacity:.85;}
+.prog{height:10px; background:#e8e0cd; border-radius:99px; overflow:hidden; margin:8px 0;}
+.prog i{display:block; height:100%; background:var(--gold); width:0%;}
+textarea, input[type=text]{width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px;
+  font-size:1rem; background:#fff; color:var(--ink); font-family:inherit;}
+textarea{min-height:110px; line-height:1.8;}
+.note-item{border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; margin-bottom:8px;}
+.note-item .t{font-weight:700;}
+.note-item .d{font-size:.8rem; color:var(--ink2);}
+.note-item button{margin-top:6px; margin-right:6px;}
+.small{font-size:.88rem; color:var(--ink2); line-height:1.7;}
+.honest{background:var(--shu-soft); border:1.5px dashed var(--shu); border-radius:12px; padding:10px 14px; font-size:.94rem; line-height:1.8;}
+footer{padding:18px 14px 30px; text-align:center; color:var(--ink2); font-size:.85rem; line-height:1.8;}
+.seg-ctrl{display:flex; gap:6px; flex-wrap:wrap;}
+.seg-ctrl button{border:2px solid var(--ai); background:#fff; color:var(--ai); border-radius:999px; padding:8px 14px; font-weight:700; cursor:pointer; min-height:44px;}
+.seg-ctrl button.on{background:var(--ai); color:#fff;}
+.score{font-size:1.15rem; font-weight:700; color:var(--ai);}
+</style>
+</head>
+<body>
+<header>
+  <h1>古文・漢文 学びの友</h1>
+  <p>名文を、訳と解説と音読で読む ― 中学生・高校生のための古典学習アプリ</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="kobun" class="on">📖 古文を読む</button>
+  <button data-tab="kanbun">🖌 漢文を読む</button>
+  <button data-tab="cards">🃏 カード</button>
+  <button data-tab="quiz">✍ クイズ</button>
+  <button data-tab="free">🎧 じゆう帳</button>
+</nav>
+
+<main>
+<!-- ============ 古文 ============ -->
+<section class="panel on" id="panel-kobun">
+  <div class="card">
+    <h2 class="sec">名文ライブラリ（古文）</h2>
+    <div class="chips" id="kobunChips"></div>
+    <div class="seg-ctrl" role="group" aria-label="表示の切り替え">
+      <button id="kbModeOrig" class="on">原文（歴史的仮名遣い）</button>
+      <button id="kbModeKana">現代仮名遣い</button>
+    </div>
+    <div class="toolbar">
+      <button class="act" id="kbPlay">▶ 読み上げ</button>
+      <button class="act stop" id="kbStop">⏹ 停止</button>
+      <span class="ratebox">速さ <input type="range" id="kbRate" min="0.6" max="1.4" step="0.1" value="0.9"> <span id="kbRateVal">0.9</span></span>
+    </div>
+    <div class="toolbar">
+      <label class="tgl"><input type="checkbox" id="kbFuri" checked> ふりがな</label>
+      <label class="tgl"><input type="checkbox" id="kbHl" checked> 助詞・助動詞の色分け</label>
+      <label class="tgl"><input type="checkbox" id="kbYakuTgl"> 現代語訳を表示</label>
+    </div>
+    <div class="reading" id="kbText"></div>
+    <div class="reading" id="kbKana" style="display:none"></div>
+    <div class="legend" id="kbLegend"><span class="sw" style="background:var(--joshi)"></span>助詞<span class="sw" style="background:var(--jodoushi)"></span>助動詞</div>
+    <p class="small" id="kbNote"></p>
+  </div>
+  <div class="card" id="kbYakuCard" style="display:none">
+    <h2 class="sec">現代語訳</h2>
+    <div class="yaku" id="kbYaku"></div>
+  </div>
+  <div class="card">
+    <h2 class="sec">重要語の解説</h2>
+    <div class="words" id="kbWords"></div>
+  </div>
+</section>
+
+<!-- ============ 漢文 ============ -->
+<section class="panel" id="panel-kanbun">
+  <div class="card">
+    <h2 class="sec">訓読のルール（返り点ガイド）</h2>
+    <div class="guidebox">
+      <div class="guide">
+        <h4>レ点 ― すぐ上の字へ返る</h4>
+        <div class="seq">
+          <div class="kbox"><span class="k">不</span><span class="o"></span><span class="ord">2番</span></div>
+          <div class="kbox"><span class="k">知</span><span class="o">レ</span><span class="ord">1番</span></div>
+        </div>
+        <p>レ点は「下の字」の左下につきます。その字を読んだら、すぐ上の字に返って読みます。例は「知らず」。まず「知」を読み、次に「不（ず）」へ返ります。</p>
+      </div>
+      <div class="guide">
+        <h4>一二点 ― 少し離れた字へ返る</h4>
+        <div class="seq">
+          <div class="kbox"><span class="k">望</span><span class="o">一</span><span class="ord">3番</span></div>
+          <div class="kbox"><span class="k">明</span><span class="o"></span><span class="ord">1番</span></div>
+          <div class="kbox"><span class="k">月</span><span class="o">二</span><span class="ord">2番</span></div>
+        </div>
+        <p>一二点は、返る距離が長いときに使います。「二」のついた字まで読み進めてから、「一」の字へ返ります。例は李白の「明月を望む」。明→月→望の順です。</p>
+      </div>
+      <div class="guide">
+        <h4>上下点 ― 入れ子になったとき</h4>
+        <div class="seq">
+          <div class="kbox"><span class="k">上</span><span class="o"></span><span class="ord">最初</span></div>
+          <div class="kbox"><span class="k">…</span><span class="o"></span><span class="ord">後まわし</span></div>
+          <div class="kbox"><span class="k">下</span><span class="o"></span><span class="ord">次に読む</span></div>
+        </div>
+        <p>一二点の返りの中に、さらに返りが入るような複雑な文では、「上」の字の次に「下」の字を読み、それから間の字を下から読む、上下点を使います。まず全体の骨格をつかむのがコツです。</p>
+      </div>
+    </div>
+    <p class="small">送り仮名は、その漢字の読みの続きを表す仮名です。たとえば「学ビ」の「ビ」は「まな-ぶ」の送り仮名。白文（はくぶん）は、返り点も送り仮名もない、漢字だけの原文のことです。</p>
+  </div>
+  <div class="card">
+    <h2 class="sec">名文ライブラリ（漢文）</h2>
+    <div class="chips" id="kanbunChips"></div>
+    <div class="toolbar">
+      <button class="act" id="knPlay">▶ 読み上げ（書き下し文）</button>
+      <button class="act stop" id="knStop">⏹ 停止</button>
+      <span class="ratebox">速さ <input type="range" id="knRate" min="0.6" max="1.4" step="0.1" value="0.9"> <span id="knRateVal">0.9</span></span>
+    </div>
+    <div class="toolbar">
+      <label class="tgl"><input type="checkbox" id="knMarks" checked> 返り点・送り仮名を表示</label>
+      <label class="tgl"><input type="checkbox" id="knKakiTgl"> 書き下し文を表示</label>
+      <label class="tgl"><input type="checkbox" id="knYakuTgl"> 現代語訳を表示</label>
+    </div>
+    <div class="kanbun-line" id="knText"></div>
+    <p class="small" id="knNote"></p>
+  </div>
+  <div class="card" id="knKakiCard" style="display:none">
+    <h2 class="sec">書き下し文</h2>
+    <div class="yaku" id="knKaki" style="font-family:'Hiragino Mincho ProN','Yu Mincho',serif;"></div>
+  </div>
+  <div class="card" id="knYakuCard" style="display:none">
+    <h2 class="sec">現代語訳</h2>
+    <div class="yaku" id="knYaku"></div>
+  </div>
+  <div class="card">
+    <h2 class="sec">読み解きポイント</h2>
+    <div class="words" id="knPoints"></div>
+  </div>
+</section>
+
+<!-- ============ カード ============ -->
+<section class="panel" id="panel-cards">
+  <div class="card">
+    <h2 class="sec">重要古語カード</h2>
+    <p class="small">カードをタップすると、意味と用例が開きます。💡マークは「ワクワク覚え方」――語呂合わせや意外な豆知識で、思わず覚えてしまうための一言です。古語は「現代語と意味がずれるもの」ほど試験に出ます。声に出して読むと、頭に入りやすくなります。</p>
+    <div class="cards-grid" id="wordCards"></div>
+  </div>
+  <div class="card">
+    <h2 class="sec">漢文 頻出句法カード</h2>
+    <p class="small">句法は「形を見たら意味が分かる」ようになるのが近道です。💡マークの「ワクワク覚え方」と一緒に、例文ごと覚えてしまいましょう。</p>
+    <div class="cards-grid" id="kuhouCards"></div>
+  </div>
+</section>
+
+<!-- ============ クイズ ============ -->
+<section class="panel" id="panel-quiz">
+  <div class="card">
+    <h2 class="sec">4択クイズ</h2>
+    <div class="seg-ctrl" id="quizMode">
+      <button data-m="word" class="on">古語の意味</button>
+      <button data-m="kuhou">漢文句法</button>
+      <button data-m="mix">ミックス</button>
+    </div>
+    <div class="prog"><i id="quizProg"></i></div>
+    <p class="score" id="quizScore">「スタート」を押してください</p>
+    <div class="quiz-q" id="quizQ"></div>
+    <div class="quiz-opts" id="quizOpts"></div>
+    <div class="toolbar">
+      <button class="act" id="quizStart">▶ スタート（10問）</button>
+      <button class="act ghost" id="quizRetryWrong" style="display:none">間違えた問題だけもう一度</button>
+    </div>
+    <div id="quizWrongList"></div>
+  </div>
+</section>
+
+<!-- ============ じゆう帳 ============ -->
+<section class="panel" id="panel-free">
+  <div class="card">
+    <h2 class="sec">じゆう帳 ― 貼った文の音読とメモ</h2>
+    <div class="honest">正直にお伝えします。このアプリは、貼り付けた文を自動で現代語訳したり、品詞分解したりすることはできません（単体のアプリでは、そこまでの解析はできないためです）。そのかわり、内蔵の名文には訳と解説をしっかり付けました。貼った文は「音読で耳から覚える」「自分の訳を書いて比べる」という使い方で支えます。</div>
+    <h3 class="sub">本文（教科書の文などを貼ってください）</h3>
+    <textarea id="freeText" placeholder="ここに古文や漢文の文を貼り付けてください"></textarea>
+    <div class="toolbar">
+      <button class="act" id="freePlay">▶ 読み上げ</button>
+      <button class="act stop" id="freeStop">⏹ 停止</button>
+      <span class="ratebox">速さ <input type="range" id="freeRate" min="0.6" max="1.4" step="0.1" value="0.9"> <span id="freeRateVal">0.9</span></span>
+    </div>
+    <h3 class="sub">自分の訳</h3>
+    <textarea id="freeYaku" placeholder="自分なりの現代語訳を書いてみましょう" style="min-height:80px"></textarea>
+    <h3 class="sub">メモ</h3>
+    <textarea id="freeMemo" placeholder="分からなかった語句、先生の説明、気づいたことなど" style="min-height:80px"></textarea>
+    <div class="toolbar">
+      <button class="act" id="freeSave">💾 保存する</button>
+      <button class="act ghost" id="freeClear">入力を消す</button>
+    </div>
+    <p class="small">保存した内容は、この端末の中にだけ記録されます（外へ送信されることはありません）。</p>
+  </div>
+  <div class="card">
+    <h2 class="sec">保存したノート</h2>
+    <div id="freeList"></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  古文・漢文 学びの友 ― 古典の文章は、声に出して読むとぐっと近くなります。<br>
+  収録した古典の原文は、著作権の切れた古典作品からの引用です。訳・解説はこのアプリのための書き下ろしです。<br>
+  不具合が出るかもしれません。実際にご使用の際に不具合がありましたら、配布ページのコメント欄からお知らせください。
+</footer>
+<script>
+/* ================= TTS ================= */
+let curUtt = null;
+function speak(text, rate){
+  if(!('speechSynthesis' in window)){ alert('この端末では読み上げが使えません。'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP'; u.rate = rate || 0.9;
+  curUtt = u; speechSynthesis.speak(u);
+}
+function stopSpeak(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
+
+/* ================= Tabs ================= */
+document.querySelectorAll('#tabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on', x===b));
+    document.querySelectorAll('section.panel').forEach(p=>p.classList.toggle('on', p.id==='panel-'+b.dataset.tab));
+    stopSpeak();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
+
+/* ================= 古文データ ================= */
+/* seg: [本文, 読み, 種別(''|'joshi'|'jodoushi')] */
+const KOBUN = [
+{ id:'taketori', title:'竹取物語', sub:'冒頭 ― かぐや姫の物語のはじまり',
+  segs:[
+   ['今','いま',''],['は','','joshi'],['昔','むかし',''],['、','',''],['竹取','たけとり',''],['の','','joshi'],['翁','おきな',''],['と','','joshi'],['いふ','',''],['者','もの',''],['あり','',''],['けり','','jodoushi'],['。','',''],
+   ['野山','のやま',''],['に','','joshi'],['まじり','',''],['て','','joshi'],['竹','たけ',''],['を','','joshi'],['取','と',''],['り','',''],['つつ','','joshi'],['、','',''],['よろづ','',''],['の','','joshi'],['こと','',''],['に','','joshi'],['使','つか',''],['ひ','',''],['けり','','jodoushi'],['。','',''],
+   ['名','な',''],['を','','joshi'],['ば','','joshi'],['、','',''],['さぬき','',''],['の','','joshi'],['造','みつくり',''],['と','','joshi'],['なむ','','joshi'],['言','い',''],['ひ','',''],['ける','','jodoushi'],['。','','']],
+  kana:'今は昔、竹取の翁という者ありけり。野山にまじりて竹を取りつつ、よろずのことに使いけり。名をば、さぬきの造（みつくり）となん言いける。',
+  yaku:'今となっては昔の話だが、竹取の翁という者がいた。野や山に入って竹を取っては、さまざまなことに使っていた。その名を、さぬきの造と言った。',
+  note:'日本最古の物語といわれる『竹取物語』の冒頭です。「今は昔」は物語のはじまりの合言葉。「けり」は過去や詠嘆を表す、物語文の代表選手です。',
+  words:[
+   ['翁（おきな）','年老いた男性のことです。','「竹取の翁」＝竹を取るおじいさん。'],
+   ['よろづ（よろず）','「万」と書き、さまざま・すべての、という意味です。','「よろづのことに使ひけり」'],
+   ['なむ','係助詞。文末の連体形と結びついて（係り結び）、意味を強めます。','「となむ言ひける」'],
+   ['けり','助動詞。過去（〜した）と詠嘆（〜だなあ）の両方に使われます。','物語の地の文で頻出します。']]},
+{ id:'makura', title:'枕草子', sub:'春はあけぼの ― 清少納言の感性',
+  segs:[
+   ['春','はる',''],['は','','joshi'],['あけぼの','',''],['。','',''],
+   ['やうやう','',''],['白','しろ',''],['く','',''],['なり','',''],['ゆく','',''],['山','やま',''],['ぎは','',''],['、','',''],['少','すこ',''],['し','',''],['あかり','',''],['て','','joshi'],['、','',''],['紫','むらさき',''],['だち','',''],['たる','','jodoushi'],['雲','くも',''],['の','','joshi'],['細','ほそ',''],['く','',''],['たなびき','',''],['たる','','jodoushi'],['。','','']],
+  kana:'春はあけぼの。ようよう白くなりゆく山ぎわ、少しあかりて、紫だちたる雲の細くたなびきたる。',
+  yaku:'春は、明け方がよい。だんだん白くなっていく山の端が、少し明るくなって、紫がかった雲が細くたなびいている（のが趣がある）。',
+  note:'清少納言『枕草子』の有名な一段。「をかし（趣がある）」の感性で季節の美しさを切り取ります。最後は「たる」で文が止まる体言止めに近い余韻も味わいどころです。',
+  words:[
+   ['あけぼの','夜明け・明け方のことです。','「春はあけぼの」'],
+   ['やうやう（ようよう）','だんだん・しだいに、という意味です。','「やうやう白くなりゆく」'],
+   ['山ぎは（山際）','山の稜線が空と接するあたりのことです。','「山ぎは少しあかりて」'],
+   ['たる','存続の助動詞「たり」の連体形で、〜ている、という状態を表します。','「たなびきたる」']]},
+{ id:'tsurezure', title:'徒然草', sub:'序段 ― 書きはじめる心持ち',
+  segs:[
+   ['つれづれ','',''],['なる','',''],['まま','',''],['に','','joshi'],['、','',''],['日暮','ひぐ',''],['らし','',''],['、','',''],['硯','すずり',''],['に','','joshi'],['向','む',''],['かひ','',''],['て','','joshi'],['、','',''],['心','こころ',''],['に','','joshi'],['移','うつ',''],['り','',''],['ゆく','',''],['よしなし','',''],['事','こと',''],['を','','joshi'],['、','',''],['そこはか','',''],['と','','joshi'],['なく','',''],['書','か',''],['き','',''],['つくれ','',''],['ば','','joshi'],['、','',''],['あやしう','',''],['こそ','','joshi'],['ものぐるほし','',''],['けれ','',''],['。','','']],
+  kana:'つれづれなるままに、日暮らし、硯に向かいて、心に移りゆくよしなし事を、そこはかとなく書きつくれば、あやしくこそものぐるおしけれ。',
+  yaku:'することがなく手持ち無沙汰なままに、一日中、硯に向かって、心に浮かんでは移っていく、とりとめもない事を、なんとなく書きつけていると、不思議と気がふれてくるような心地がする。',
+  note:'兼好法師『徒然草』の序段です。「あやしくこそ〜けれ」は係り結び（こそ→已然形）のかたち。「ものぐるほしけれ」は形容詞の已然形で結ばれています。',
+  words:[
+   ['つれづれ','することがなく、手持ち無沙汰なさまです。','「つれづれなるままに」'],
+   ['日暮らし（ひぐらし）','一日中という意味です。','虫のヒグラシではありません。'],
+   ['よしなし事','とりとめのない、つまらない事です。','「心に移りゆくよしなし事」'],
+   ['ものぐるほし','気がふれたようだ・心が乱れる、という意味です。','「あやしくこそものぐるほしけれ」']]},
+{ id:'tosa', title:'土佐日記', sub:'冒頭 ― 女文字で書く日記',
+  segs:[
+   ['男','おとこ',''],['も','','joshi'],['す','',''],['なる','','jodoushi'],['日記','にっき',''],['と','','joshi'],['いふ','',''],['もの','',''],['を','','joshi'],['、','',''],['女','おんな',''],['も','','joshi'],['して','',''],['み','',''],['む','','jodoushi'],['と','','joshi'],['て','','joshi'],['、','',''],['する','',''],['なり','','jodoushi'],['。','','']],
+  kana:'男もすなる日記というものを、女もしてみんとて、するなり。',
+  yaku:'男の人も書くという日記というものを、女である私も書いてみようと思って、書くのである。',
+  note:'紀貫之が女性のふりをして書いた『土佐日記』の冒頭。当時、日記は男性が漢字で書くものでした。「すなる」の「なり」は伝聞・推定、最後の「なり」は断定で、同じ形でも働きが違います。ここがいちばんの見分けどころです。',
+  words:[
+   ['すなる','「す（する）」に伝聞・推定の助動詞「なり」がついた形です。','「男もすなる日記」＝男もするという日記'],
+   ['みむ','「見む」ではなく「してみよう」という意志の「む」です。','「女もしてみむとて」'],
+   ['なり（断定）','文末の「なり」は断定（〜である）。伝聞の「なり」と見分けましょう。','「するなり」'],
+   ['とて','「〜と思って」という意味の接続助詞です。','「してみむとて、するなり」']]},
+{ id:'genji', title:'源氏物語', sub:'桐壺 ― 帝の寵愛を受けた更衣',
+  segs:[
+   ['いづれ','',''],['の','','joshi'],['御時','おんとき',''],['に','','joshi'],['か','','joshi'],['、','',''],['女御','にょうご',''],['、','',''],['更衣','こうい',''],['あまた','',''],['さぶらひ','',''],['たまひ','','jodoushi'],['ける','','jodoushi'],['中','なか',''],['に','','joshi'],['、','',''],['いと','',''],['やむごとなき','',''],['際','きわ',''],['に','','joshi'],['は','','joshi'],['あら','',''],['ぬ','','jodoushi'],['が','','joshi'],['、','',''],['すぐれて','',''],['時','とき',''],['めき','',''],['たまふ','','jodoushi'],['あり','',''],['けり','','jodoushi'],['。','','']],
+  kana:'いずれの御時にか、女御、更衣あまたさぶらいたまいける中に、いとやむごとなき際にはあらぬが、すぐれて時めきたまうありけり。',
+  yaku:'どの帝の御代であったか、女御や更衣が大勢お仕えしていた中に、それほど高貴な身分ではないけれど、際立って帝の寵愛を受けている方がいた。',
+  note:'紫式部『源氏物語』の冒頭です。尊敬の助動詞「たまふ」が2回登場し、帝への敬意を表します。「ぬ」は打消の助動詞「ず」の連体形。主語が書かれていないのに、敬語で「帝のお気に入り」と分かるところが古文の面白さです。',
+  words:[
+   ['御時（おんとき）','天皇の御代のことです。','「いづれの御時にか」'],
+   ['女御・更衣','后妃の身分。女御の方が更衣より高位です。','桐壺更衣は更衣の身分でした。'],
+   ['やむごとなき','高貴である・重々しい、という意味です。','「いとやむごとなき際にはあらぬ」'],
+   ['時めく','寵愛を受ける・栄える、という意味です。','「すぐれて時めきたまふ」'],
+   ['たまふ','尊敬の助動詞。四段活用で、目上の人の動作に使います。','「さぶらひたまひける」']]},
+{ id:'hojoki', title:'方丈記', sub:'冒頭 ― ゆく川の流れ',
+  segs:[
+   ['行','ゆ',''],['く','',''],['川','かわ',''],['の','','joshi'],['流','なが',''],['れ','',''],['は','','joshi'],['絶','た',''],['え','',''],['ず','','jodoushi'],['して','','joshi'],['、','',''],['しかも','',''],['、','',''],['もと','',''],['の','','joshi'],['水','みず',''],['に','','joshi'],['あら','',''],['ず','','jodoushi'],['。','',''],['淀','よど',''],['み','',''],['に','','joshi'],['浮','う',''],['かぶ','',''],['うたかた','',''],['は','','joshi'],['、','',''],['かつ','',''],['消','き',''],['え','',''],['、','',''],['かつ','',''],['結','むす',''],['び','',''],['て','','joshi'],['、','',''],['久','ひさ',''],['しく','',''],['とどまり','',''],['たる','','jodoushi'],['例','ためし',''],['なし','',''],['。','','']],
+  kana:'行く川の流れは絶えずして、しかも、もとの水にあらず。淀みに浮かぶうたかたは、かつ消え、かつ結びて、久しくとどまりたる例（ためし）なし。',
+  yaku:'流れ行く川の流れは絶えることがなく、それでいて、（そこを流れているのは）もとの水ではない。淀みに浮かぶ泡は、消えたかと思うとまたでき、長くとどまっていた例はない。',
+  note:'鴨長明『方丈記』の冒頭、無常観をうたう有名な一節です。「ず」は打消の助動詞が2回。「かつ消え、かつ結びて」の「かつ〜かつ〜」は、一方では〜、一方では〜、という言い方です。',
+  words:[
+   ['しかも','それでいて・そのうえ、という意味の接続詞です。','「絶えずして、しかも、もとの水にあらず」'],
+   ['うたかた','水に浮かぶ泡のことです。はかなさの象徴です。','「淀みに浮かぶうたかた」'],
+   ['かつ〜かつ〜','一方では〜し、一方では〜する、という表現です。','「かつ消え、かつ結びて」'],
+   ['例（ためし）','前例・例という意味で読みます。「ためし」と読みます。','「とどまりたる例なし」']]}
+];
+
+/* ---- 古文 描画 ---- */
+let kbIdx = 0;
+const kbTextEl = document.getElementById('kbText'), kbKanaEl = document.getElementById('kbKana');
+function renderKobun(){
+  const t = KOBUN[kbIdx];
+  document.querySelectorAll('#kobunChips button').forEach((b,i)=>b.classList.toggle('on', i===kbIdx));
+  const hl = document.getElementById('kbHl').checked, furi = document.getElementById('kbFuri').checked;
+  kbTextEl.innerHTML = t.segs.map(s=>{
+    const inner = s[1] ? '<ruby>'+s[0]+'<rt>'+s[1]+'</rt></ruby>' : s[0];
+    const cls = (hl && s[2]) ? ' class="hl-'+s[2]+'"' : '';
+    return '<span'+cls+'>'+inner+'</span>';
+  }).join('');
+  kbTextEl.classList.toggle('nofuri', !furi);
+  document.getElementById('kbLegend').style.display = hl ? '' : 'none';
+  kbKanaEl.textContent = t.kana;
+  document.getElementById('kbNote').textContent = t.note;
+  document.getElementById('kbYaku').textContent = t.yaku;
+  document.getElementById('kbWords').innerHTML = t.words.map(w=>
+    '<div class="word"><b>'+w[0]+'</b><span class="m">'+w[1]+'</span><span class="e">用例：'+w[2]+'</span></div>').join('');
+}
+const kbChips = document.getElementById('kobunChips');
+KOBUN.forEach((t,i)=>{
+  const b = document.createElement('button'); b.textContent = t.title;
+  b.addEventListener('click', ()=>{ kbIdx = i; stopSpeak(); renderKobun(); });
+  kbChips.appendChild(b);
+});
+function kbSetMode(orig){
+  document.getElementById('kbModeOrig').classList.toggle('on', orig);
+  document.getElementById('kbModeKana').classList.toggle('on', !orig);
+  kbTextEl.style.display = orig ? '' : 'none';
+  kbKanaEl.style.display = orig ? 'none' : '';
+}
+document.getElementById('kbModeOrig').addEventListener('click', ()=>kbSetMode(true));
+document.getElementById('kbModeKana').addEventListener('click', ()=>kbSetMode(false));
+document.getElementById('kbFuri').addEventListener('change', renderKobun);
+document.getElementById('kbHl').addEventListener('change', renderKobun);
+document.getElementById('kbYakuTgl').addEventListener('change', e=>{
+  document.getElementById('kbYakuCard').style.display = e.target.checked ? '' : 'none';
+});
+const kbRate = document.getElementById('kbRate');
+kbRate.addEventListener('input', ()=>document.getElementById('kbRateVal').textContent = kbRate.value);
+document.getElementById('kbPlay').addEventListener('click', ()=>speak(KOBUN[kbIdx].kana, parseFloat(kbRate.value)));
+document.getElementById('kbStop').addEventListener('click', stopSpeak);
+renderKobun();
+</script>
+<script>
+/* ================= 漢文データ ================= */
+/* tok: [漢字, 送り仮名, 返り点] / ['、'] は句読点 */
+const KANBUN = [
+{ id:'gaku-ji', title:'論語 ― 学而', sub:'学びの楽しさを説く、儒教の第一声',
+  toks:[['子','',''],['曰','わく',''],['、'],['学','び',''],['而','て',''],['時','に',''],['習','ふ',''],['之','',''],['、'],['不','',''],['亦','',''],['説','ばしから',''],['乎','や',''],['。'],
+        ['有','',''],['朋','',''],['自','',''],['遠','く',''],['方','',''],['来','たる',''],['、'],['不','',''],['亦','',''],['楽','しから',''],['乎','や',''],['。'],
+        ['人','',''],['不','',''],['知','',''],['而','',''],['不','',''],['慍','らず',''],['、'],['不','',''],['亦','',''],['君子','',''],['乎','や',''],['。']],
+  kaki:'子曰わく、「学びて時に之を習ふ、亦た説ばしからずや。朋有り、遠方より来たる、亦た楽しからずや。人知らずして慍らず、亦た君子ならずや。」',
+  yaku:'先生（孔子）がおっしゃるには、「学んで、折々にそれを復習する。これも喜ばしいことではないか。友人が遠方から訪ねて来る。これも楽しいことではないか。人が（自分を）理解しなくても恨まない。これも君子の姿ではないか。」',
+  note:'『論語』の冒頭です。「不亦〜乎（亦た〜からずや）」は「〜ではないか」という反語の代表形。気持ちのよいリズムの文なので、書き下し文を声に出して読むのが一番の勉強です。',
+  points:[
+   ['不亦説乎','「亦た説ばしからずや」と読みます。「〜ではないか」という反語で、断定をやわらかく強めます。','乎'],
+   ['説','ここでは「悦」と同じで、喜ばしいという意味です。','説ばし'],
+   ['慍','「うらむ」と読みます。「人知らずして慍らず」が人格の目標として示されます。','慍らず']]},
+{ id:'i-sei', title:'論語 ― 為政', sub:'十五志学 ― 年齢の言い方の元祖',
+  toks:[['吾','',''],['十','',''],['有','',''],['五','',''],['而','にして',''],['志','す',''],['于','に',''],['学','',''],['、'],['三','',''],['十','',''],['而','にして',''],['立','つ',''],['、'],['四','',''],['十','',''],['而','にして',''],['不','',''],['惑','わ','レ'],['、'],['五','',''],['十','',''],['而','にして',''],['知','る',''],['天','',''],['命','',''],['、'],['六','',''],['十','',''],['而','にして',''],['耳','',''],['順','ふ',''],['、'],['七','',''],['十','',''],['而','にして',''],['従','ふ','一'],['心','',''],['所','',''],['欲','する','二'],['、'],['不','',''],['踰','え',''],['矩','','レ'],['。']],
+  kaki:'吾、十有五にして学に志し、三十にして立ち、四十にして惑はず、五十にして天命を知り、六十にして耳順ひ、七十にして心の欲する所に従ひて、矩を踰えず。',
+  yaku:'私は、十五歳で学問に志し、三十歳で（学問の基礎が）自立し、四十歳で迷わなくなり、五十歳で天命（天から与えられた使命）を知り、六十歳で人の言葉を素直に聞けるようになり、七十歳では、心の望むままにしても、道を外れることがなくなった。',
+  note:'「四十不惑（不惑）」「五十知命（知命）」など、年齢の異称のもとになった文です。「惑はず」は「惑」を先に、「不（ず）」を後に読む返読で、惑の字にレ点がつきます。「従心所欲不踰矩」は一二点の返読です。',
+  points:[
+   ['惑はず','「不惑」は「惑わず」と読みます。下の字「惑」から読むのでレ点がつきます。','不惑'],
+   ['従ふこと一二点','「心の欲する所に従ふ」は、従（一）…欲（二）の一二点。欲まで読み進めて、従へ返ります。','従心所欲'],
+   ['矩（のり）','「わく・きまり」のこと。道徳の基準を指します。','踰えず']]},
+{ id:'moushi', title:'孟子 ― 人和', sub:'天の時、地の利、人の和',
+  toks:[['天','',''],['時','',''],['不','',''],['如','か','レ'],['地','',''],['利','に',''],['、'],['地','',''],['利','',''],['不','',''],['如','か','レ'],['人','',''],['和','に',''],['。']],
+  kaki:'天の時は地の利に如かず。地の利は人の和に如かず。',
+  yaku:'天の与える好機（天時）も、土地の有利さ（地利）には及ばない。その土地の有利さも、人々の心が一致すること（人和）には及ばない。',
+  note:'『孟子』公孫丑下の有名な一節です。「不如（〜に如かず）」は「〜には及ばない」という比較の言い方。下の字「如」から読むので、如にレ点がついています。いちばん大切なのは人の和、という教えです。',
+  points:[
+   ['不如','「〜に如（し）かず」と読み、「〜には及ばない」という意味です。如にレ点がつきます。','不如地利'],
+   ['天時・地利・人和','好機・土地の有利さ・人の団結。この三つを比べる構成が見どころです。','天時不如地利']]},
+{ id:'shiki', title:'史記 ― 垓下の歌', sub:'項羽、敗北の夜に歌う',
+  toks:[['力','',''],['抜','く',''],['山','',''],['兮','',''],['気','',''],['蓋','ふ',''],['世','',''],['、'],['時','',''],['不','',''],['利','あ','レ'],['兮','',''],['騅','',''],['不','',''],['逝','か','レ'],['。'],['騅','',''],['不','',''],['逝','か','レ'],['兮','',''],['可','',''],['奈','',''],['何','',''],['、'],['虞','',''],['兮','',''],['虞','',''],['兮','',''],['奈','',''],['若','を',''],['何','',''],['。']],
+  kaki:'力は山を抜き、気は世を蓋ふ。時利あらずして、騅逝かず。騅逝かざるを如何せん。虞や虞や、若を如何せん。',
+  yaku:'（私の）力は山を引き抜くほど、気迫は世をおおうほどだった。だが時運は私に味方せず、（愛馬の）騅は進もうとしない。騅が進まないのを、どうすればよいのか。虞よ、虞よ、そなたをどうしたらよいのか。',
+  note:'楚の項羽が垓下で敗れた夜、愛妾の虞美人に向けて歌ったと『史記』が伝える歌です。「兮（けい）」はリズムを取る助字。「時利あらず」の「利」も、「騅逝かず」の「逝」も、下の字から読むレ点の返読です。英雄の最期の悲しみが伝わります。',
+  points:[
+   ['兮（けい）','歌のリズムを整える助字です。意味を持たず、調べを取ります。','力抜山兮'],
+   ['逝かず','「不逝」は「逝かず」。下の字「逝」にレ点がつきます。','騅不逝'],
+   ['若（なんぢ）','二人称。「あなた・そなた」という意味です。','奈若何']]},
+{ id:'rihaku', title:'李白 ― 静夜思', sub:'月を見て故郷を思う',
+  toks:[['床','',''],['前','',''],['明','',''],['月','',''],['光','',''],['、'],['疑','ふ',''],['是','れ',''],['地','',''],['上','',''],['霜','',''],['。'],['挙','げて',''],['頭','',''],['望','','一'],['明','',''],['月','','二'],['、'],['低','れて',''],['頭','',''],['思','ふ',''],['故','',''],['郷','',''],['。']],
+  kaki:'床前に明月の光、疑ふらくは是れ地上の霜。頭を挙げて明月を望み、頭を低れて故郷を思ふ。',
+  yaku:'寝床の前に、明るい月の光が差している。まるで地面に降りた霜のようだ。頭を上げて明るい月を眺め、（やがて）頭を垂れて、遠い故郷に思いをはせる。',
+  note:'唐の詩人・李白の代表作です。二十字の短い詩に、旅先の望郷が凝縮されています。「望明月」は一二点の返読で、「明月を望む」と読みます（望＝一、月＝二）。静かな調べで音読してみましょう。',
+  points:[
+   ['望明月','「明月を望む」と読みます。望に「一」、月に「二」の一二点がつきます。','挙頭望明月'],
+   ['疑ふらくは','「〜ではないかと思う」という言い方です。','疑是地上霜'],
+   ['故郷','故郷を思う気持ちは、時代を問わない詩のテーマです。','低頭思故郷']]},
+{ id:'toho', title:'杜甫 ― 春望', sub:'戦乱の中の都を思う（前半）',
+  toks:[['国','',''],['破','れて',''],['山','',''],['河','',''],['在','り',''],['、'],['城','',''],['春','',''],['草','',''],['木','',''],['深','し',''],['。'],['感','じて',''],['時','に',''],['花','',''],['濺','ぐ',''],['涙','',''],['、'],['恨','みて',''],['別','を',''],['鳥','',''],['驚','かす',''],['心','',''],['。']],
+  kaki:'国破れて山河在り、城春にして草木深し。時に感じては花にも涙を濺ぎ、別れを恨みては鳥にも心を驚かす。',
+  yaku:'国は（戦乱で）滅びたが、山や川は昔のままだ。都は春を迎え、草木が生い茂っている。つらい時世を思っては、花を見ても涙をこぼし、（家族との）別れを恨んでは、鳥の声にも心がおびえる。',
+  note:'唐の詩人・杜甫の代表作です。安禄山の乱で荒れた長安を詠みました。「国破れて山河在り」は対句の美しさでも有名です。音読のときは、五つの漢字ごとに一息入れる「五言」のリズムを意識しましょう。',
+  points:[
+   ['国破れて山河在り','変わる人の世と、変わらない自然の対比（対句）です。','春望'],
+   ['濺ぐ（そそぐ）','涙をこぼす、という意味で使われています。','花濺涙'],
+   ['鳥にも心を驚かす','小さな鳥の声にもびくっとする、戦乱下の敏感な心です。','恨別鳥驚心']]}
+];
+
+let knIdx = 0;
+function renderKanbun(){
+  const t = KANBUN[knIdx];
+  document.querySelectorAll('#kanbunChips button').forEach((b,i)=>b.classList.toggle('on', i===knIdx));
+  const marks = document.getElementById('knMarks').checked;
+  const el = document.getElementById('knText');
+  el.classList.toggle('nowhaku', !marks);
+  el.innerHTML = t.toks.map(tok=>{
+    if(tok.length === 1) return '<span class="punct">'+tok[0]+'</span>';
+    const ko = tok[1] ? tok[1] : '';
+    const km = tok[2] ? tok[2] : '';
+    return '<span class="kt"><span class="ko">'+ko+'</span><span class="kc">'+tok[0]+'</span><span class="km">'+km+'</span></span>';
+  }).join('');
+  document.getElementById('knNote').textContent = t.note;
+  document.getElementById('knKaki').textContent = t.kaki;
+  document.getElementById('knYaku').textContent = t.yaku;
+  document.getElementById('knPoints').innerHTML = t.points.map(p=>
+    '<div class="word"><b>'+p[0]+'</b><span class="m">'+p[1]+'</span><span class="e">本文：'+p[2]+'</span></div>').join('');
+}
+const knChips = document.getElementById('kanbunChips');
+KANBUN.forEach((t,i)=>{
+  const b = document.createElement('button'); b.textContent = t.title;
+  b.addEventListener('click', ()=>{ knIdx = i; stopSpeak(); renderKanbun(); });
+  knChips.appendChild(b);
+});
+document.getElementById('knMarks').addEventListener('change', renderKanbun);
+document.getElementById('knKakiTgl').addEventListener('change', e=>{
+  document.getElementById('knKakiCard').style.display = e.target.checked ? '' : 'none';
+});
+document.getElementById('knYakuTgl').addEventListener('change', e=>{
+  document.getElementById('knYakuCard').style.display = e.target.checked ? '' : 'none';
+});
+const knRate = document.getElementById('knRate');
+knRate.addEventListener('input', ()=>document.getElementById('knRateVal').textContent = knRate.value);
+document.getElementById('knPlay').addEventListener('click', ()=>speak(KANBUN[knIdx].kaki, parseFloat(knRate.value)));
+document.getElementById('knStop').addEventListener('click', stopSpeak);
+renderKanbun();
+</script>
+<script>
+/* ================= カードデータ ================= */
+const WORD_CARDS = [
+ ['あはれ','しみじみと心が動くようす。よい意味にも悲しい意味にも使われます。','「あはれ」という言葉は、その場面の空気で訳し分けます。','春の夕暮れ、あはれなり。'],
+ ['をかし','明るく趣がある・面白い。『枕草子』のキーワードです。','「あはれ」がしみじみ系なら、「をかし」はパッと明るい感動です。','すずしげな色あひ、をかし。'],
+ ['うつくし','かわいらしい・愛らしい。現代語の「美しい」とはずれます。','小さいもの、幼いものへの「かわいい！」が近い感覚です。','雀の子、うつくし。'],
+ ['ゆかし','見たい・聞きたい・知りたい、と心が引かれるようす。','語源は「行かし（行きたい）」。好奇心の言葉です。','その先がゆかし。'],
+ ['あたらし','惜しい・もったいない。もとの形は「あらたし」ではありません。','立派なものが活かされない場面で使われます。','あたら名木を切りて。'],
+ ['いと','とても・たいそう。程度の副詞です。','現代語の「いと」はほぼこの意味のまま残っています。','いとやむごとなき際。'],
+ ['いみじ','程度がはなはだしい。よい意味（すばらしい）にも悪い意味（ひどい）にも。','プラスにもマイナスにも振れる、振り幅の大きい言葉です。','いみじう泣く。'],
+ ['めでたし','すばらしい・立派だ。お祝いの「おめでとう」の元です。','「愛で（めで）」たい、という気持ちの言葉です。','めでたき御代。'],
+ ['あいなし','つまらない・気に食わない・どうしようもない。','現代語の「愛」とは無関係なのが落とし穴です。','あいなきことに心動く。'],
+ ['かたはらいたし','そばで見ていて気の毒・恥ずかしい。','「傍ら（そば）」で「痛い」気持ちになる、という成り立ちです。','かたはらいたきこと。'],
+ ['つきづきし','似つかわしい・ふさわしい。','身分や場面に「付く」感じが語感です。','つきづきしき装束。'],
+ ['おどろく','目が覚める・はっと気づく。驚く、の意味だけではありません。','「おどろかる」は目が覚めさせられる、という形です。','音におどろく。'],
+ ['ながむ','物思いにふける・ぼんやりと眺める。「詠む」とも通じます。','「長雨（ながめ）」と同源で、ぼんやりした時間を表します。','夕暮れをながむ。'],
+ ['心もとなし','不安だ・気がかりだ・待ち遠しい。','頼りない心の状態をいう言葉です。','返事を心もとなく待つ。'],
+ ['ねんごろ','丁寧だ・親切だ。また、親しい間柄という意味も。','「懇ろ」という漢字そのままの温かさです。','ねんごろに語らふ。'],
+ ['あさまし','意外で驚き、あきれるようす。','よい驚きには使わず、呆れの気持ちが中心です。','あさましき夢。'],
+ ['わろし','悪い・よくない。現代語の「悪し（あし）」に近い語感です。','「よし（良い）」の反対として覚えましょう。','わろき着物。'],
+ ['あらまほし','理想的だ・こうありたい。','「あらまほしい」は現代語にも残っています。','あらまほしき住まい。']];
+const KUHOU_CARDS = [
+ ['使役','「〜させる」。書き下しでは「〜をして〜しむ」と読むことも。','使・令・教・遣などが目印です。','使民以時（民を使ふに時を以てす）― 民を使うには時期を選ぶ。『論語』'],
+ ['受身','「〜れる・〜られる」。見・為などが目印です。','「為〜所〜」の形は、高校でよく出ます。','為虎所食（虎の食ふ所と為る）― 虎に食べられてしまう。'],
+ ['否定','「〜ない」。不・無・未・非・莫が目印です。','「未」は「いまだ〜ず」で「まだ〜していない」。','未見君子（いまだ君子を見ず）― まだ君子を見たことがない。'],
+ ['疑問','「〜か」。安・何・誰・幾などが目印で、文末に「乎・哉」が来ることも。','疑問の語が見えたら、答えを要求する文だと構えましょう。','安知魚之楽（安くぞ魚の楽しみを知らん）― どうして魚の楽しさが分かるのか。『荘子』'],
+ ['反語','「どうして〜か（いや、〜ない）」。豈・安・何・寧に「乎・哉」。','形は疑問でも、意味は強い否定・断定です。','豈有此理（豈に此の理有らんや）― そんな道理があるものか。'],
+ ['比較','「〜より」。於・于・乎が目印です。','「〜に如かず（及ばない）」も比較の仲間です。','苛政猛於虎（苛政は虎よりも猛し）― 苛酷な政治は虎よりも恐ろしい。『礼記』'],
+ ['仮定','「もし〜ならば」。若・使・縦・苟が目印です。','条件の文は、後半に結果が来る二段構えです。','若不勝之（若し之に勝たずんば）― もしそれに勝てなければ。'],
+ ['禁止','「〜するな」。勿・毋・無・莫が目印です。','否定の中でも、命令形の強い言い方です。','非礼勿視（礼に非ざれば視ること勿れ）― 礼に外れたものは見るな。『論語』'],
+ ['限定','「ただ〜だけ」。唯・但・只・徒が目印です。','範囲をしぼる言葉で、強調の味わいがあります。','唯力是視（唯だ力を是れ視る）― ただ力を重んじる。'],
+ ['願望','「〜したい・〜であってほしい」。願・欲・冀が目印です。','「欲」は現代語の「ほしい」の直系の先祖です。','願君多采擷（願はくは君多く采擷せよ）― どうかたくさん摘んでください。王維の詩']];
+/* ワクワク覚え方（フック）― 語呂合わせや意外性で、思わず覚えてしまう一言 */
+const HOOKS_WORD = {
+ 'あはれ':'「あはれ」は、思わず「ああ…」とため息が漏れる瞬間の言葉。その「ああ」が、そのまま名前になりました。',
+ 'をかし':'「をかし」は「おかし（可笑しい）」のご先祖。クスッと笑えるくらい明るくて楽しい、それが「をかし」の正体です。',
+ 'うつくし':'合言葉は「うつくし＝ちびかわ」。「美しい」と訳すと減点のもと。平安の人は、小さいもの・幼いものに「うつくし！」と言いました。',
+ 'ゆかし':'「ゆかし」の「ゆか」は「行か（行きたい）」。「その先、ゆかし〜（見に行きたい）」という、好奇心のドキドキです。',
+ 'あたらし':'「新しい」と訳したら大事故。「あたらし」は「惜しい・もったいない」。「あ〜、たらふく活かせたのに」の惜しさ、と覚えましょう。',
+ 'いと':'「いと」は細い糸じゃありません。意味は「超」。「いとをかし」は「超おもしろい」――つまり平安時代の「超」です。',
+ 'いみじ':'「いみじ」は平安時代の「ヤバい」。すごい時にもひどい時にも使える、振り幅最大の言葉です。',
+ 'めでたし':'「おめでとう」の「おめで」は、この言葉から来ました。思わず祝いたくなる立派さが「めでたし」です。',
+ 'あいなし':'「愛なし」と書いても恋の話はゼロ。「あー、イマイチしっくりこない」というモヤモヤが「あいなし」です。',
+ 'かたはらいたし':'「傍ら（かたはら）」＋「痛し」。隣で見ている自分の心が痛む言葉で、今の言葉なら「見ていて辛い」です。',
+ 'つきづきし':'「付き付きし」＝ピタッと付いている感じ。身分や場面にピタッと合うのが「つきづきし」です。',
+ 'おどろく':'平安の「おどろく」は、まず「目が覚める」の意味。「音におどろく」は「物音でハッと目覚める」です。驚くのは、その次の意味。',
+ 'ながむ':'「ながむ」は「眺め（ながめ）」と同源。ぼーっと外を眺める物思いの時間、そのものが「ながむ」です。',
+ '心もとなし':'「心もと（心の元）なし」＝心の土台がぐらぐらしている状態。だから不安で、待ち遠しいのです。',
+ 'ねんごろ':'漢字は「懇ろ」。「懇親会」の「懇」と同じ字です。丁寧さと親しさの二刀流、と覚えましょう。',
+ 'あさまし':'決めゼリフは「あっ、さま（様）にならない！」。呆れて開いた口がふさがらない場面で使う言葉です。',
+ 'わろし':'「よし（良い）」の相方は「わろし（悪い）」。平安のOKとNGは、このペアで覚えるのが早道です。',
+ 'あらまほし':'「あらまあ、こうあってほしい」。理想の姿に「あらまあ」と見とれる気持ちが、そのまま言葉になりました。'};
+const HOOKS_KUHOU = {
+ '使役':'「使」は「使う人」、つまりボスの字。ボスが部下を動かすのが使役です。「使民」は、王が民を使う場面。',
+ '受身':'「為虎所食」は「虎の食ふ所と為る」＝虎のメニューに入ること。怖い例文ほど、頭から離れません。',
+ '否定':'「未」は未来の「未」。「未見」は「まだ未来に起きていない」＝「まだ見ていない」。否定の中でいちばんおっとりした言い方です。',
+ '疑問':'「安（いずくんぞ）」は「どうして！？」の大声バージョン。文の中に「安」がいたら、問いかけの合図です。',
+ '反語':'形は疑問、心は断定。「豈に〜んや」は「そんなわけあるか！」という、漢文版のツッコミです。',
+ '比較':'「於」は物差しの目盛り。「猛於虎」は「虎より猛し」。「於」を見たら、何と何を比べているか探しましょう。',
+ '仮定':'文頭の「若」は「若い」じゃなくて「もし」。「若し雨ならば」の「もし」の合図です。',
+ '禁止':'「勿」は「するな」の盾の字。「非礼勿視」は「礼に外れたら見るな」という、四文字の命令文です。',
+ '限定':'「唯」は「ただ一筋」の字。「唯力是視」は「力しか見ていない」。一点集中を見抜く合図です。',
+ '願望':'「願はくは」は、現代語「願わくば」の元ネタ。「願君」は「お願い、あなた」という、ラブレター式のお願いの形です。'};
+function buildCards(elId, data, label, hooks){
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  data.forEach(d=>{
+    const c = document.createElement('div'); c.className = 'kcard';
+    const hook = (hooks && hooks[d[0]]) ? '<div class="hook">💡 '+hooks[d[0]]+'</div>' : '';
+    c.innerHTML = '<div class="w">'+d[0]+'</div><div class="hint">タップで'+label+'</div>'+
+      '<div class="detail">'+d[1]+'<br>'+d[2]+hook+'<div class="ex">'+d[3]+'</div></div>';
+    c.addEventListener('click', ()=>c.classList.toggle('open'));
+    el.appendChild(c);
+  });
+}
+buildCards('wordCards', WORD_CARDS, '意味と用例', HOOKS_WORD);
+buildCards('kuhouCards', KUHOU_CARDS, '見分け方と例文', HOOKS_KUHOU);
+
+/* ================= クイズ ================= */
+let AC = null;
+function beep(freq, t0, dur, type){
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, AC.currentTime + t0);
+    g.gain.exponentialRampToValueAtTime(0.18, AC.currentTime + t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + t0 + dur);
+    o.connect(g); g.connect(AC.destination); o.start(AC.currentTime + t0); o.stop(AC.currentTime + t0 + dur + 0.05);
+  }catch(e){}
+}
+function soundOK(){ beep(660, 0, 0.12); beep(990, 0.1, 0.2); }
+function soundNG(){ beep(196, 0, 0.25, 'sawtooth'); }
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function wordPool(){
+  return WORD_CARDS.map(w=>({ q:'古語「'+w[0]+'」の意味として、正しいものはどれでしょう。', a:w[1].split('。')[0]+'。',
+    wrong: shuffle(WORD_CARDS.filter(x=>x!==w)).slice(0,3).map(x=>x[1].split('。')[0]+'。'),
+    ex:'覚え方：'+w[2] }));
+}
+function kuhouPool(){
+  return KUHOU_CARDS.map(k=>({ q:'次の例文に使われている句法はどれでしょう。\n「'+k[3].split('―')[0]+'」', a:k[0],
+    wrong: shuffle(KUHOU_CARDS.filter(x=>x!==k)).slice(0,3).map(x=>x[0]),
+    ex:k[1] }));
+}
+let quizMode = 'word', quizList = [], quizI = 0, quizScore = 0, quizWrong = [], quizLocked = false;
+document.querySelectorAll('#quizMode button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#quizMode button').forEach(x=>x.classList.toggle('on', x===b));
+    quizMode = b.dataset.m;
+  });
+});
+function startQuiz(list){
+  quizList = shuffle(list).slice(0, 10); quizI = 0; quizScore = 0; quizWrong = [];
+  document.getElementById('quizRetryWrong').style.display = 'none';
+  document.getElementById('quizWrongList').innerHTML = '';
+  showQuizQ();
+}
+function showQuizQ(){
+  const Q = quizList[quizI]; quizLocked = false;
+  document.getElementById('quizProg').style.width = (quizI / quizList.length * 100) + '%';
+  document.getElementById('quizScore').textContent = '第'+(quizI+1)+'問 ／ '+quizList.length+'問　正解 '+quizScore;
+  document.getElementById('quizQ').innerText = Q.q;
+  const opts = shuffle([Q.a].concat(Q.wrong));
+  const box = document.getElementById('quizOpts'); box.innerHTML = '';
+  opts.forEach(o=>{
+    const btn = document.createElement('button'); btn.textContent = o;
+    btn.addEventListener('click', ()=>{
+      if(quizLocked) return; quizLocked = true;
+      [...box.children].forEach(c=>{ c.disabled = true; if(c.textContent === Q.a) c.classList.add('right'); });
+      if(o === Q.a){ quizScore++; soundOK(); }
+      else { btn.classList.add('wrong'); quizWrong.push(Q); soundNG();
+        alert('残念。正解は「'+Q.a+'」です。\n'+Q.ex); }
+      document.getElementById('quizScore').textContent = '第'+(quizI+1)+'問 ／ '+quizList.length+'問　正解 '+quizScore + (o===Q.a ? '　⭕ 正解！' : '　❌');
+      setTimeout(()=>{ quizI++; if(quizI < quizList.length) showQuizQ(); else finishQuiz(); }, o===Q.a ? 900 : 400);
+    });
+    box.appendChild(btn);
+  });
+}
+function finishQuiz(){
+  document.getElementById('quizProg').style.width = '100%';
+  document.getElementById('quizQ').innerText = 'お疲れさまでした。'+quizList.length+'問中 '+quizScore+' 問正解です。';
+  document.getElementById('quizOpts').innerHTML = '';
+  if(quizWrong.length){
+    document.getElementById('quizRetryWrong').style.display = '';
+    document.getElementById('quizWrongList').innerHTML = '<h3 class="sub">間違えた問題の答え合わせ</h3>' +
+      quizWrong.map(w=>'<div class="word"><b>'+w.q.replace(/\n/g,' ')+'</b><span class="m">正解：'+w.a+'</span><span class="e">'+w.ex+'</span></div>').join('');
+  } else {
+    document.getElementById('quizWrongList').innerHTML = '<p class="score">全問正解です。すばらしい！</p>';
+  }
+}
+document.getElementById('quizStart').addEventListener('click', ()=>{
+  beep(520, 0, 0.06);
+  const pool = quizMode === 'word' ? wordPool() : quizMode === 'kuhou' ? kuhouPool() : wordPool().concat(kuhouPool());
+  startQuiz(pool);
+});
+document.getElementById('quizRetryWrong').addEventListener('click', ()=>{
+  if(quizWrong.length) startQuiz(quizWrong.slice());
+});
+
+/* ================= じゆう帳 ================= */
+const LS_KEY = 'kobun-kanbun-free-notes';
+function loadNotes(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }catch(e){ return []; } }
+function saveNotes(n){ localStorage.setItem(LS_KEY, JSON.stringify(n)); }
+function renderNotes(){
+  const notes = loadNotes();
+  const el = document.getElementById('freeList');
+  if(!notes.length){ el.innerHTML = '<p class="small">まだ保存したノートはありません。</p>'; return; }
+  el.innerHTML = '';
+  notes.forEach((n, i)=>{
+    const d = document.createElement('div'); d.className = 'note-item';
+    const title = (n.text || '').replace(/\s+/g,' ').slice(0, 30) || '（本文なし）';
+    d.innerHTML = '<div class="t">'+title+'</div><div class="d">'+n.date+'</div>';
+    const b1 = document.createElement('button'); b1.className = 'act ghost'; b1.textContent = '開く';
+    b1.addEventListener('click', ()=>{
+      document.getElementById('freeText').value = n.text || '';
+      document.getElementById('freeYaku').value = n.yaku || '';
+      document.getElementById('freeMemo').value = n.memo || '';
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    });
+    const b2 = document.createElement('button'); b2.className = 'act stop'; b2.textContent = '削除';
+    b2.addEventListener('click', ()=>{
+      if(!confirm('このノートを削除しますか。')) return;
+      const ns = loadNotes(); ns.splice(i, 1); saveNotes(ns); renderNotes();
+    });
+    d.appendChild(b1); d.appendChild(b2); el.appendChild(d);
+  });
+}
+document.getElementById('freeSave').addEventListener('click', ()=>{
+  const text = document.getElementById('freeText').value.trim();
+  if(!text){ alert('本文が空です。まず文を貼ってください。'); return; }
+  const ns = loadNotes();
+  ns.unshift({ text, yaku: document.getElementById('freeYaku').value, memo: document.getElementById('freeMemo').value,
+    date: new Date().toLocaleString('ja-JP') });
+  saveNotes(ns); renderNotes(); soundOK();
+  alert('保存しました。');
+});
+document.getElementById('freeClear').addEventListener('click', ()=>{
+  document.getElementById('freeText').value = ''; document.getElementById('freeYaku').value = ''; document.getElementById('freeMemo').value = '';
+});
+const freeRate = document.getElementById('freeRate');
+freeRate.addEventListener('input', ()=>document.getElementById('freeRateVal').textContent = freeRate.value);
+document.getElementById('freePlay').addEventListener('click', ()=>{
+  const t = document.getElementById('freeText').value.trim();
+  if(!t){ alert('まず本文を貼ってください。'); return; }
+  speak(t, parseFloat(freeRate.value));
+});
+document.getElementById('freeStop').addEventListener('click', stopSpeak);
+renderNotes();
+</script>
+</body>
+</html>
