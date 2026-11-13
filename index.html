@@ -274,7 +274,7 @@ footer{padding:18px 14px 30px; text-align:center; color:var(--ink2); font-size:.
 <section class="panel" id="panel-free">
   <div class="card">
     <h2 class="sec">じゆう帳 ― 貼った文の音読とメモ</h2>
-    <div class="honest">正直にお伝えします。このアプリ自体は、貼り付けた文を自動で現代語訳したり、品詞分解したりする力は持っていません。そのかわり、内蔵の名文には訳と解説をしっかり付けました。貼った文は「音読で耳から覚える」「自分の訳を書いて比べる」という使い方で支えます。なお、下の「AIに訳してもらう」では、自分のAIキーを使う場合に限り、AIの下訳を試すことができます（下訳は必ず辞書や教科書で確かめてください）。</div>
+    <div class="honest">正直にお伝えします。このアプリは、貼り付けた文を自動で現代語訳したり、品詞分解したりすることはできません（単体のアプリでは、そこまでの解析はできないためです）。そのかわり、内蔵の名文には訳と解説をしっかり付けました。貼った文は「音読で耳から覚える」「自分の訳を書いて比べる」という使い方で支えます。</div>
     <h3 class="sub">本文（教科書の文などを貼ってください）</h3>
     <textarea id="freeText" placeholder="ここに古文や漢文の文を貼り付けてください"></textarea>
     <div class="toolbar">
@@ -295,35 +295,6 @@ footer{padding:18px 14px 30px; text-align:center; color:var(--ink2); font-size:.
   <div class="card">
     <h2 class="sec">保存したノート</h2>
     <div id="freeList"></div>
-  </div>
-  <div class="card">
-    <h2 class="sec">AIに訳してもらう（自分のキーで）</h2>
-    <p class="small">上の「本文」欄に貼った古文・漢文について、AIに「現代語訳」と「解説」の下訳を出してもらう機能です。使うには、自分のAI（Google Gemini）のAPIキーが必要です。キーはこの端末の中にだけ保存され、AIへのリクエスト以外には使われません。キーは、ここ以外の場所（チャットなど）に入力しないでください。</p>
-    <h3 class="sub">APIキーの設定</h3>
-    <input type="password" id="aiKey" placeholder="Gemini APIキーを貼り付けてください" autocomplete="off">
-    <div class="toolbar">
-      <button class="act" id="aiKeySave">キーを保存</button>
-      <button class="act ghost" id="aiKeyDel">キーを削除</button>
-    </div>
-    <p class="small" id="aiKeyState"></p>
-    <div id="aiNoKey" class="honest" style="display:none">
-      まだキーが設定されていません。キーは「Google AI Studio」で無料で取得できます（Googleアカウントでログインし、「APIキーを作成」を押すだけです）。取得したキーを上の欄に貼って「キーを保存」を押すと、この機能が使えるようになります。キーがなくても、名文ライブラリ・カード・クイズ・音読とメモは今までどおり使えます。
-    </div>
-    <h3 class="sub">AIへの質問</h3>
-    <div class="seg-ctrl" id="aiKind">
-      <button data-k="auto" class="on">自動で判定</button>
-      <button data-k="kobun">古文</button>
-      <button data-k="kanbun">漢文</button>
-    </div>
-    <div class="toolbar">
-      <button class="act" id="aiRun">🤖 AIに訳・解説を聞く</button>
-    </div>
-    <p class="small">本文が長いときは、先頭の1000文字までで聞きます。結果は下に表示されます。</p>
-    <div id="aiResult" style="display:none">
-      <div class="honest">⚠ これはAIによる「下訳」です。間違いが混ざることがあります。必ず辞書や教科書で確かめましょう。</div>
-      <div id="aiOut" style="margin-top:10px"></div>
-    </div>
-    <p class="small" id="aiMsg"></p>
   </div>
 </section>
 </main>
@@ -782,120 +753,6 @@ document.getElementById('freePlay').addEventListener('click', ()=>{
 });
 document.getElementById('freeStop').addEventListener('click', stopSpeak);
 renderNotes();
-</script>
-<script>
-/* ================= AI訳・解説（自分のキーで） ================= */
-const AI_KEY_LS = 'kobun-kanbun-gemini-key';
-const aiKeyInput = document.getElementById('aiKey');
-function aiKey(){ return localStorage.getItem(AI_KEY_LS) || ''; }
-function renderAiKeyState(){
-  const has = !!aiKey();
-  document.getElementById('aiKeyState').textContent = has
-    ? 'キー設定済みです（この端末内にだけ保存されています）。'
-    : 'キーは未設定です。';
-  document.getElementById('aiNoKey').style.display = has ? 'none' : '';
-  if(has && !aiKeyInput.value) aiKeyInput.placeholder = '設定済み（変更するときだけ貼り直してください）';
-}
-document.getElementById('aiKeySave').addEventListener('click', ()=>{
-  const v = aiKeyInput.value.trim();
-  if(!v){ alert('キーが入力されていません。'); return; }
-  localStorage.setItem(AI_KEY_LS, v);
-  aiKeyInput.value = '';
-  renderAiKeyState();
-  alert('キーを保存しました（この端末内にだけ保存されます）。');
-});
-document.getElementById('aiKeyDel').addEventListener('click', ()=>{
-  localStorage.removeItem(AI_KEY_LS);
-  aiKeyInput.value = '';
-  renderAiKeyState();
-});
-let aiKind = 'auto';
-document.querySelectorAll('#aiKind button').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('#aiKind button').forEach(x=>x.classList.toggle('on', x===b));
-    aiKind = b.dataset.k;
-  });
-});
-function aiPrompt(text, kind){
-  const kindText = kind === 'kobun' ? '入力は古文です。'
-    : kind === 'kanbun' ? '入力は漢文です。'
-    : '入力が古文か漢文かは、まず判定してください。';
-  return 'あなたは中学生・高校生に古典を教える先生です。' + kindText +
-   '次の古典の文章について、必ず次の見出しの形式で、日本語で答えてください。見出しは【】で書き、マークダウンの太字（**）は使わないでください。\n' +
-   '【種別】古文 または 漢文、とだけ書く\n' +
-   '【書き下し文】漢文の場合のみ書く（古文の場合は「なし」と書く）\n' +
-   '【現代語訳】全文の現代語訳\n' +
-   '【読み】全文の読み（古文は現代仮名遣いの読み、漢文は書き下し文の読み）を、ひらがなで\n' +
-   '【解説】重要語（3〜5語）の意味と、文法・句法のポイントを、箇条書きで分かりやすく。分からない所は推測で断定せず、「辞書で確認しましょう」と書くこと。\n\n' +
-   '文章：\n' + text;
-}
-function renderAiOut(text){
-  const heads = ['種別','書き下し文','現代語訳','読み','解説'];
-  const parts = {};
-  let cur = null, buf = [];
-  text.split(/\r?\n/).forEach(line=>{
-    const m = line.match(/^【(.+?)】\s*(.*)$/);
-    if(m && heads.includes(m[1])){
-      if(cur) parts[cur] = buf.join('\n').trim();
-      cur = m[1]; buf = m[2] ? [m[2]] : [];
-    } else if(cur){ buf.push(line); }
-  });
-  if(cur) parts[cur] = buf.join('\n').trim();
-  const box = document.getElementById('aiOut');
-  if(!Object.keys(parts).length){
-    box.innerHTML = '<div class="word"><b>AIの回答</b><span class="m" style="white-space:pre-wrap"></span></div>';
-    box.querySelector('.m').textContent = text;
-    return;
-  }
-  const order = [['書き下し文','書き下し文'],['現代語訳','現代語訳'],['読み','読み（ふりがな）の案'],['解説','重要語と文法・句法の解説']];
-  box.innerHTML = order.filter(o => parts[o[0]] && parts[o[0]] !== 'なし').map(o =>
-    '<div class="word"><b>'+o[1]+'</b><span class="m" style="white-space:pre-wrap"></span></div>').join('');
-  const spans = box.querySelectorAll('.m');
-  order.filter(o => parts[o[0]] && parts[o[0]] !== 'なし').forEach((o, i)=>{ spans[i].textContent = parts[o[0]]; });
-}
-document.getElementById('aiRun').addEventListener('click', async ()=>{
-  const msg = document.getElementById('aiMsg');
-  const key = aiKey();
-  if(!key){
-    renderAiKeyState();
-    msg.textContent = '先にAPIキーを設定してください。上の「APIキーの設定」が案内です。';
-    document.getElementById('aiKey').scrollIntoView({behavior:'smooth', block:'center'});
-    return;
-  }
-  const text = document.getElementById('freeText').value.trim();
-  if(!text){ msg.textContent = 'まず上の「本文」欄に、古文や漢文の文を貼ってください。'; return; }
-  const clipped = text.length > 1000 ? text.slice(0, 1000) : text;
-  const btn = document.getElementById('aiRun');
-  btn.disabled = true; btn.textContent = '🤖 AIに聞いています…';
-  msg.textContent = '';
-  try{
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(key), {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ contents: [{ parts: [{ text: aiPrompt(clipped, aiKind) }] }] })
-    });
-    if(!res.ok){
-      if(res.status === 400 || res.status === 403) throw new Error('キーが違うか、使えない状態のようです。キーを確かめて、保存し直してください。');
-      throw new Error('AIのサーバーが混み合っているようです。少し待って、もう一度試してください。（状態：' + res.status + '）');
-    }
-    const data = await res.json();
-    const out = (((data.candidates || [])[0] || {}).content || {}).parts;
-    const answer = (out || []).map(p => p.text || '').join('').trim();
-    if(!answer) throw new Error('AIから答えが返りませんでした。文を短くしてもう一度試してください。');
-    renderAiOut(answer);
-    document.getElementById('aiResult').style.display = '';
-    soundOK();
-  }catch(e){
-    if(e instanceof TypeError){
-      msg.textContent = 'うまくいきませんでした：AIのサーバーへ通信できませんでした。ネットの接続を確かめて、もう一度試してください。';
-    } else {
-      msg.textContent = 'うまくいきませんでした：' + (e.message || e);
-    }
-  }finally{
-    btn.disabled = false; btn.textContent = '🤖 AIに訳・解説を聞く';
-  }
-});
-renderAiKeyState();
 </script>
 </body>
 </html>
